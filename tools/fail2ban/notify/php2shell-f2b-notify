@@ -1,0 +1,9 @@
+#!/bin/bash
+# fail2ban -> hourly digest queue.
+# Usage: php2shell-f2b-notify <ip> <jail> <failures>
+# Only records the ban; php2shell-f2b-digest emails the summary every hour.
+set -u
+
+QUEUE_DIR=/var/lib/php2shell-f2b
+mkdir -p "$QUEUE_DIR"
+printf '%s\t%s\t%s\t%s\n' "$(date -u '+%Y-%m-%d %H:%M:%S')" "$1" "$2" "${3:-?}" >> "$QUEUE_DIR/queue"

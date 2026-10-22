@@ -1,0 +1,61 @@
+#!/bin/bash
+# Hourly email digest of fail2ban bans. Run from /etc/cron.d/php2shell-f2b-digest.
+# Settings: /etc/php2shell/notify.conf (MAIL_TO, MAIL_FROM, ACCESS_LOG).
+# Sends with the system sendmail (postfix, ssmtp, msmtp...). Without one, it only logs.
+# Attacker-controlled text (request lines) goes into the mail body only, never into a command line.
+set -u
+
+CONF=/etc/php2shell/notify.conf
+[ -r "$CONF" ] && . "$CONF"
+MAIL_TO=${MAIL_TO:-root}
+MAIL_FROM=${MAIL_FROM:-php2shell@$(hostname -f 2>/dev/null || hostname)}
+ACCESS_LOG=${ACCESS_LOG:-/var/log/nginx/access.log}
+QUEUE_DIR=/var/lib/php2shell-f2b
+QUEUE="$QUEUE_DIR/queue"
+LOGFILE=/var/log/php2shell-f2b.log
+MAX_DETAILED=40
+
+[ -s "$QUEUE" ] || exit 0
+
+BATCH="$QUEUE_DIR/sending.$(date +%s)"
+mv "$QUEUE" "$BATCH"
+TOTAL=$(wc -l < "$BATCH")
+HOST=$(hostname -s)
+BY_JAIL=$(cut -f3 "$BATCH" | sort | uniq -c | sort -rn | awk '{printf "  %-22s %s\n", $2, $1}')
+
+DETAILS=""
+n=0
+while IFS=$'\t' read -r when ip jail failures; do
+    n=$((n + 1))
+    if [ "$n" -gt "$MAX_DETAILED" ]; then
+        DETAILS+=$'\n'"... and $((TOTAL - MAX_DETAILED)) more IPs (see: sudo fail2ban-client status <jail>)"$'\n'
+        break
+    fi
+    pattern="^$(printf '%s' "$ip" | sed 's/[.]/\\./g') "
+    sample=$(grep -E -- "$pattern" "$ACCESS_LOG" 2>/dev/null | tail -n 3 | awk -F'"' '{print "      " $2 "  [" $6 "]"}' | cut -c1-220)
+    DETAILS+=$'\n'"- ${ip}  (${jail}, ${failures} matches, ${when} UTC)"$'\n'"${sample:-      (no lines in the current log)}"$'\n'
+done < "$BATCH"
+
+BODY="Hourly fail2ban summary for ${HOST}.
+
+Until:  $(date -u '+%Y-%m-%d %H:%M UTC')
+Total:  ${TOTAL} IPs banned
+
+By jail:
+${BY_JAIL}
+
+Details (last requests of each IP):
+${DETAILS}
+To unban an IP:
+  sudo fail2ban-client set <jail> unbanip <ip>
+"
+
+SENDMAIL=$(command -v sendmail || ls /usr/sbin/sendmail 2>/dev/null)
+if [ -n "$SENDMAIL" ] && printf 'From: %s\nTo: %s\nSubject: [Security %s] %s IPs banned in the last hour\nContent-Type: text/plain; charset=UTF-8\n\n%s\n' \
+        "$MAIL_FROM" "$MAIL_TO" "$HOST" "$TOTAL" "$BODY" | timeout 60 "$SENDMAIL" -t -f "$MAIL_FROM" >>"$LOGFILE" 2>&1; then
+    rm -f "$BATCH"
+else
+    echo "$(date -Is) digest mail failed or no sendmail; requeued ${TOTAL} bans" >>"$LOGFILE"
+    cat "$BATCH" >> "$QUEUE"
+    rm -f "$BATCH"
+fi

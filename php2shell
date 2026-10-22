@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# php2shell: check and fix PHP2Shell (CVE-2026-109618 / CVE-2026-109619) without any AI.
+# Plain bash + standard Linux tools, so it also runs on old servers.
+#
+#   sudo ./php2shell check              read-only review; prints the verdict, saves the full report
+#   sudo ./php2shell harden [--apply]   fail2ban + nginx protections (plan only without --apply)
+#   sudo ./php2shell build-php [--apply|--switch|--rollback]
+#                                       build a fixed PHP from php.net source when your distro has none
+#   ./php2shell help <command>          options of a command
+set -u
+HERE=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
+CHECK=$HERE/skills/php2shell-review/scripts/check.sh
+
+cmd=${1:-help}; [ $# -gt 0 ] && shift
+case "$cmd" in
+  check)
+    if [ "$(id -u)" = 0 ]; then DIR=/var/log/php2shell; else DIR=$HOME; fi
+    mkdir -p "$DIR"; OUT=$DIR/php2shell-$(hostname -s)-$(date +%Y%m%d-%H%M).txt
+    echo "Checking (read-only, takes a minute)..."
+    bash "$CHECK" "$@" > "$OUT" 2>&1
+    sed -n '/=== SUMMARY ===/,$p' "$OUT"
+    echo
+    echo "Full report: $OUT"
+    echo "Lines marked !! in the report explain each finding. To get help from an AI, paste only the SUMMARY above (see PROMPT.md)."
+    [ "$(id -u)" = 0 ] || echo "NOTE: run with sudo for a complete check."
+    ;;
+  harden)    exec bash "$HERE/tools/harden.sh" "$@" ;;
+  build-php) exec bash "$HERE/tools/build-php/build-php.sh" "$@" ;;
+  help|-h|--help)
+    case "${1:-}" in
+      check) bash "$CHECK" --help ;; harden) bash "$HERE/tools/harden.sh" --help ;;
+      build-php) bash "$HERE/tools/build-php/build-php.sh" --help ;; *) sed -n '2,10p' "$0" ;;
+    esac ;;
+  *) echo "unknown command: $cmd"; sed -n '2,10p' "$0"; exit 2 ;;
+esac

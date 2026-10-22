@@ -1,0 +1,35 @@
+# php2shell web attack protection. Installed by "php2shell harden".
+# @IGNOREIP@ and @BANTIME@ are filled in by the installer.
+# List bans:  sudo fail2ban-client status nginx-webshell
+# Unban:      sudo fail2ban-client set <jail> unbanip <ip>
+#
+# IMPORTANT: nginx-webshell bans any request for a .php file other than /index.php.
+# That suits front-controller apps (Laravel, Symfony, Slim...). Disable it for WordPress,
+# phpMyAdmin or other sites that serve many .php files.
+
+[DEFAULT]
+ignoreip = @IGNOREIP@
+bantime  = @BANTIME@
+backend  = auto
+logpath  = @LOGPATH@
+action   = iptables-allports[name=%(__name__)s, protocol=all, blocktype=DROP]
+           nginx-deny
+           @NOTIFY@
+
+[nginx-webshell]
+enabled  = true
+filter   = nginx-webshell
+findtime = 10m
+maxretry = 3
+
+[nginx-upload-flood]
+enabled  = true
+filter   = nginx-upload-flood
+findtime = 60
+maxretry = 30
+
+[nginx-404-flood]
+enabled  = true
+filter   = nginx-404-flood
+findtime = 60
+maxretry = 120

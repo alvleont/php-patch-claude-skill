@@ -1,0 +1,12 @@
+{
+  "name": "php2shell",
+  "owner": { "name": "alvleont" },
+  "plugins": [
+    {
+      "name": "php2shell-review",
+      "source": "./",
+      "description": "Check and patch Linux web servers for PHP2Shell (CVE-2026-109618, CVE-2026-109619).",
+      "version": "1.0.0"
+    }
+  ]
+}
