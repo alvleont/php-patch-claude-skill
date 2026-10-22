@@ -3,6 +3,7 @@
   "description": "Check Linux web servers for PHP2Shell (CVE-2026-109618, CVE-2026-109619), find signs of compromise, and patch: build a fixed PHP from source, fail2ban + nginx hardening.",
   "version": "1.0.0",
   "author": { "name": "alvleont" },
+  "license": "MIT",
   "homepage": "https://github.com/alvleont/php-patch-claude-skill",
   "repository": "https://github.com/alvleont/php-patch-claude-skill",
   "keywords": ["php", "security", "cve-2026-109618", "cve-2026-109619", "php2shell", "php-fpm", "fail2ban", "nginx", "livewire"]

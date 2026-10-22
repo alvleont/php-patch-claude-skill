@@ -155,4 +155,4 @@ AGENTS.md / PROMPT.md             instructions for AI agents / chat-only models
 
 ## Disclaimer
 
-Provided as is, without warranty. Run the plan (no `--apply`) first, keep backups, and test on a staging server when you can.
+MIT licensed (see [LICENSE](LICENSE)). Provided as is, without warranty. Run the plan (no `--apply`) first, keep backups, and test on a staging server when you can.
