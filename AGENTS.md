@@ -12,8 +12,11 @@ In short:
 4. Defensive only: never write or send exploit payloads.
 5. If the verdict is COMPROMISED / SUSPECTED, stop. Do not delete anything. Tell the user to isolate the server.
 
-When you change the scripts in this repository:
+For the rest of the web stack (nginx, OpenSSL, Laravel, Livewire, Filament, Node.js), use `docs/stack-review-2026-10.md`. Its commands are read-only too. Package upgrades still need the user's OK, and a snapshot comes first.
 
+When you change anything in this repository:
+
+- Never commit to `main`. It is protected and a direct push is rejected. Create a branch from `origin/main` and open a pull request.
 - Keep them plain bash with standard GNU tools (no Python, no jq). They must run on old servers.
 - `check.sh` must stay read-only.
 - Any script that changes the system must default to a plan or dry run, back files up, and roll back on failure.
