@@ -17,6 +17,7 @@ Tools to check Linux web servers for **PHP2Shell** (CVE-2026-109618, CVE-2026-10
 - **No configuration change fully protects you.** Disabling `session.upload_progress` is only partial.
 - **Your distro may not have a fixed package yet.** Amazon Linux 2023, for example, still offered only 8.4.10/8.4.14 when this was written. `dnf`/`apt` saying "nothing to do" does not mean you are patched. `build-php` covers that gap.
 - **Check the PHP that php-fpm actually runs**, not `php -v`. They can be different binaries, and `check` reads the real one from `/proc`.
+- **PHP is not the only hole.** nginx, OpenSSL, Laravel, Livewire and Filament also published advisories in October 2026, and NGINX Rift is being exploited in the wild. See [docs/stack-review-2026-10.md](docs/stack-review-2026-10.md) for each one: how to check exposure, how to look for signs of exploitation, and how to upgrade the OS packages safely.
 
 ## Quick start (no AI)
 
@@ -142,6 +143,7 @@ tools/build-php/build-php.sh      build and switch to a fixed PHP from php.net s
 tools/harden.sh                   install fail2ban + nginx protections
 tools/fail2ban/                   filters, actions, jail template, email digest
 tools/nginx/                      front-controller-only snippet, Cloudflare real-IP generator
+docs/stack-review-2026-10.md      nginx, OpenSSL, Laravel, Livewire, Filament, Node.js advisories (Oct 2026)
 AGENTS.md / PROMPT.md             instructions for AI agents / chat-only models
 .claude-plugin/                   Claude Code plugin + marketplace manifest
 ```
@@ -152,6 +154,19 @@ AGENTS.md / PROMPT.md             instructions for AI agents / chat-only models
 - [watchTowr: PHP2Shell FAQ](https://watchtowr.com/intelligence/php-cve-2026-109618-faq/)
 - [JFrog: PHP2Shell, all you need to know](https://research.jfrog.com/post/php2shell-all-you-need-to-know-about-cve-2026-109618-and-cve-2026-109619/)
 - Official versions and checksums: https://www.php.net/downloads
+
+## Contributing
+
+`main` is protected: nobody can push to it directly, not even the owner. Every change goes through a new branch and a pull request:
+
+```bash
+git switch -c fix/short-description origin/main
+# edit, then: bash -n on every changed script
+git push -u origin fix/short-description
+gh pr create
+```
+
+Force-pushes to `main` and deleting `main` are also blocked.
 
 ## Disclaimer
 
